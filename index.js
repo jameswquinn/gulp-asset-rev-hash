@@ -19,7 +19,7 @@ module.exports = function(options) {
 
   var startReg = /<!--\s*start\-hash\s*-->/gim;
   var endReg = /<!--\s*end\-hash\s*-->/gim;
-  var jsAndCssReg = /<\s*script\s+.*?src\s*=\s*"([^"]+.js).*".*?><\s*\/\s*script\s*>|<\s*link\s+.*?href\s*=\s*"([^"]+.css).*".*?>/gi;
+  var jsAndCssReg = /<\s*script\s+.*?src\s*=\s*"([^"]+.js).*?".*?><\s*\/\s*script\s*>|<\s*link\s+.*?href\s*=\s*"([^"]+.css).*".*?>/gi;
   var regSpecialsReg = /([.?*+^$[\]\\(){}|-])/g;
 
   function getTags(content) {
