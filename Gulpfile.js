@@ -2,7 +2,13 @@ var gulp = require('gulp');
 var rev = require('./index');
 
 gulp.task('test', function () {
-  gulp.src('test/example.html')
-    .pipe(rev({assetsDir: 'test'}))
+  gulp.src('test/index.html')
+    .pipe(rev({
+      assetsGetter: function (filePath) {
+        return filePath.replace('/site-path', 'test/bundle')
+      },
+      hashLength: 16,
+      hashArgName: 'h',
+    }))
     .pipe(gulp.dest('test'));
 });

@@ -1,22 +1,26 @@
 var path = require('path');
 var fs = require('fs');
-var EOL = require('os').EOL;
 
 var through = require('through2');
 var gutil = require('gulp-util');
 
+/**
+ * @param {Object} [options]
+ * @param {string} [options.assetsDir]
+ * @param {Function} [options.assetsGetter] returned absolute path to file for get hash
+ * @param {number} [options.hashLength=32]
+ * @param {string} [options.hashArgName='hash']
+ * @return {Object}
+ */
 module.exports = function(options) {
   options = options || {};
+  options.hashLength = options.hashLength || 32;
+  options.hashArgName = options.hashArgName || 'hash';
 
-  var startReg = /<!--\s*rev\-hash\s*-->/gim;
-  var endReg = /<!--\s*end\s*-->/gim;
+  var startReg = /<!--\s*start\-hash\s*-->/gim;
+  var endReg = /<!--\s*end\-hash\s*-->/gim;
   var jsAndCssReg = /<\s*script\s+.*?src\s*=\s*"([^"]+.js).*".*?><\s*\/\s*script\s*>|<\s*link\s+.*?href\s*=\s*"([^"]+.css).*".*?>/gi;
   var regSpecialsReg = /([.?*+^$[\]\\(){}|-])/g;
-  var basePath, mainPath, mainName, alternatePath;
-
-  function getBlockType(content) {
-    return jsReg.test(content) ? 'js' : 'css';
-  }
 
   function getTags(content) {
     var tags = [];
@@ -44,13 +48,10 @@ module.exports = function(options) {
       callback();
     }
     else if (file.isStream()) {
-      this.emit('error', new gutil.PluginError('gulp-usemin', 'Streams are not supported!'));
+      this.emit('error', new gutil.PluginError('gulp-usemin', 'Streams are not supported!')); //todo name
       callback();
     }
     else {
-      basePath = file.base;
-      mainPath = path.dirname(file.path);
-      mainName = path.basename(file.path);
 
       var html = [];
       var sections = String(file.contents).split(endReg);
@@ -61,19 +62,21 @@ module.exports = function(options) {
           var section = sections[i].split(startReg);
           var tags = getTags(section[1]);
           html.push(section[0]);
-          html.push('<!-- rev-hash -->\r\n')
-
+          html.push('<!-- start-hash -->\r\n');
           for (var j = 0; j < tags.length; j++) {
             tag = tags[j];
+            var filePath = options.assetsGetter
+                ? options.assetsGetter(tag.path, tag.pathReg, options.assetsDir)
+                : path.join((options.assetsDir ? options.assetsDir:''), tag.path);
             var hash = require('crypto')
               .createHash('md5')
-              .update(
-                fs.readFileSync(
-                  path.join((options.assetsDir?options.assetsDir:''), tag.path), {encoding: 'utf8'}))
-              .digest("hex");
-            html.push(tag.html.replace(tag.pathReg, tag.path + '?v=' + hash + '"') + '\r\n');
+              .update(fs.readFileSync(filePath, {encoding: 'utf8'}))
+              .digest("hex")
+              .substr(-options.hashLength);
+            var assetPath = tag.path + '?' +  options.hashArgName + '=' + hash;
+            html.push(tag.html.replace(tag.pathReg, assetPath + '"') + '\r\n');
           }
-          html.push('<!-- end -->');
+          html.push('<!-- end-hash -->');
         }
         else { html.push(sections[i]); }
       }

@@ -1,19 +1,18 @@
 {
-  "name": "gulp-rev-hash",
-  "version": "0.0.2",
-  "description": "Appends a file's hash to a file URL to cache assets in any file (html, templates)",
+  "name": "gulp-asset-rev-hash",
+  "version": "0.0.1",
+  "description": "Appends a file's hash to a file URL to cache assets in any file (html, templates), Frol from gulp-rev-hash",
   "main": "index.js",
   "dependencies": {
     "gulp-util": "~2.2.14",
     "through2": "~0.4.1"
   },
   "devDependencies": {
-    "event-stream": "~3.1.0",
     "gulp": "~3.5.5"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/outluch/gulp-rev-hash.git"
+    "url": "git://github.com/vladlavrik/gulp-rev-hash-abs.git"
   },
   "keywords": [
     "gulpplugin",
@@ -25,7 +24,7 @@
     "md5",
     "hash"
   ],
-  "author": "Konstantin <outluch@gmail.com>",
+  "author": "VladLavrik <lavrik@ukr.net.com>",
   "license": "MIT",
   "engines": {
     "node": ">=0.8"
