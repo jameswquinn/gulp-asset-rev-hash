@@ -19,7 +19,7 @@ npm install --save-dev gulp-asset-rev-hash
 var gulp = require('gulp');
 var assetHash = require('gulp-asset-rev-hash');
 
-gulp.task('rev-hash', function () {
+gulp.task('assets-hash', function () {
 	gulp.src('src/index.html')
 		.pipe(assetHash())
 		.pipe(gulp.dest('src'));
