@@ -1,12 +1,13 @@
-gulp-rev-hash
+gulp-asset-rev-hash
 =============
 
 > Keeps a file's hash in file's links to your assets. For automatic cache updating purpose.
+> Fork from gulp-rev-hash
 
 ## Install
 
 ```
-npm install --save-dev gulp-rev-hash
+npm install --save-dev gulp-asset-rev-hash
 ```
 
 
@@ -14,55 +15,68 @@ npm install --save-dev gulp-rev-hash
 
 ### Default
 
-This example will keep links to assets in `layouts/_base.ect` ECT template always updated on assets change. If your assets are not in root of your project, add assetsDir option, like this: `.pipe(revHash({assetsDir: 'public'}))`
-
 ```js
 var gulp = require('gulp');
-var revHash = require('gulp-rev-hash');
+var assetHash = require('gulp-asset-rev-hash');
 
-gulp.task('rev-hash', function () {
-	gulp.src('layouts/_base.ect')
-		.pipe(revHash())
-		.pipe(gulp.dest('layouts'));
+gulp.task('assets-hash', function () {
+	gulp.src('src/index.html')
+		.pipe(assetHash())
+		.pipe(gulp.dest('src'));
 });
 ```
 
 #### Input:
 
 ```html
-<!-- rev-hash -->
-<link rel="stylesheet" href="main.min.css">
-<!-- end -->
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- start-hash -->
+    <link rel="stylesheet" href="main.min.css" media="screen" />
+    <script src="abc.js"></script>
+    <!-- end-hash -->
 
-<!-- rev-hash -->
-<script src="abc.js?v=0401f2bda539bac50b0378d799c2b64e"></script>
-<script src="def.js?v=e478ca95198c5a901c52f7a0f91a5d00"></script>
-<!-- end -->
+    <!-- start-hash -->
+    <link rel="stylesheet" href="main.min2.css" media="print">
+    <!-- end-hash -->
+    </head>
+<body>
+<!-- start-hash -->
+<script src="def.js"></script>
+<!-- end-hash -->
+</body>
+</html>
 ```
 
 #### Output:
 
 ```html
-<!-- rev-hash -->
-<link rel="stylesheet" href="main.min.css?v=9d58b7441d92130f545778e418d1317d">
-<!-- end -->
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- start-hash -->
+    <link rel="stylesheet" href="main.min.css?h=9a08514aab0cb538" media="screen" />
+    <script src="abc.js?h=0b0378d799c2b64e"></script>
+    <!-- end-hash -->
 
-<!-- rev-hash -->
-<script src="abc.js?v=0401f2bda539bac50b0378d799c2b64e"></script>
-<script src="def.js?v=e478ca95198c5a901c52f7a0f91a5d00"></script>
-<!-- end -->
+    <!-- start-hash -->
+    <link rel="stylesheet" href="main.min2.css?h=70931b9a8532fcce" media="print">
+    <!-- end-hash -->
+    </head>
+<body>
+<!-- start-hash -->
+<script src="def.js?h=1c52f7a0f91a5d00"></script>
+<!-- end-hash -->
+</body>
+</html>
 ```
-
-Main idea is that your template always contains a link with hash. So, if you use preprocessing for your assets (compass, less, stylus, coffeescript, dart), if you accidentally added empty line or empty item to your source, preprocessor will generate the same file and your cached resource will have the same hash. And your clients will not redownload file.
 
 ### Custom options
 
 ```
 assetsDir: 'public'
+assetsGetter: function(filePath, filePathRex, assetsDir) {}
+hashLength: 16
+hashArgName: 'hash'
 ```
-
-Path to assets in your project
-
-### Known issues
-
-* Assets links in template should be on new line each.
