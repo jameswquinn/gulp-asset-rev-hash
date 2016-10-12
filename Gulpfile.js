@@ -8,7 +8,8 @@ gulp.task('test', function () {
         return filePath.replace('/site-path', 'test/bundle')
       },
       hashLength: 16,
-      hashArgName: 'h'
+      hashArgName: 'h',
+      usePale: true
     }))
     .pipe(gulp.dest('test'));
 });

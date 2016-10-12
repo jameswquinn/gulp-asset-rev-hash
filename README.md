@@ -17,12 +17,20 @@ npm install --save-dev gulp-asset-rev-hash
 
 ```js
 var gulp = require('gulp');
-var assetHash = require('gulp-asset-rev-hash');
+var rev = require('./index');
 
-gulp.task('assets-hash', function () {
-	gulp.src('src/index.html')
-		.pipe(assetHash())
-		.pipe(gulp.dest('src'));
+gulp.task('test', function () {
+  gulp.src('test/index.html')
+    .pipe(rev({
+      assetsGetter: function (filePath) {
+        return filePath.replace('/site-path', 'test/bundle')
+      },
+      hashLength: 16,
+      hashArgName: 'h',
+      removeTags: 0,
+      usePale: true
+    }))
+    .pipe(gulp.dest('test'));
 });
 ```
 
@@ -33,17 +41,19 @@ gulp.task('assets-hash', function () {
 <html>
 <head>
     <!-- start-hash -->
-    <link rel="stylesheet" href="main.min.css" media="screen" />
-    <script src="abc.js"></script>
+    <!--[if lte IE 9]>
+    <link rel="stylesheet" href="/site-path/main.min.css">
+    <script src="/site-path/abc.js"></script>
+    <![endif]-->
     <!-- end-hash -->
 
     <!-- start-hash -->
-    <link rel="stylesheet" href="main.min2.css" media="print">
+    <link rel="stylesheet" href="/site-path/main.min2.css">
     <!-- end-hash -->
-    </head>
+</head>
 <body>
 <!-- start-hash -->
-<script src="def.js"></script>
+<script src="/site-path/def.js?h=old-hash"></script>
 <!-- end-hash -->
 </body>
 </html>
@@ -56,17 +66,19 @@ gulp.task('assets-hash', function () {
 <html>
 <head>
     <!-- start-hash -->
-    <link rel="stylesheet" href="main.min.css?h=9a08514aab0cb538" media="screen" />
-    <script src="abc.js?h=0b0378d799c2b64e"></script>
+    <!--[if lte IE 9]>
+    <link rel="stylesheet" href="/site-path/main.min.css?h=545778e418d1317d">
+    <script src="/site-path/abc.js?h=0b0378d799c2b64e"></script>
+    <![endif]-->
     <!-- end-hash -->
 
     <!-- start-hash -->
-    <link rel="stylesheet" href="main.min2.css?h=70931b9a8532fcce" media="print">
+    <link rel="stylesheet" href="/site-path/main.min2.css?h=70931b9a8532fcce">
     <!-- end-hash -->
-    </head>
+</head>
 <body>
 <!-- start-hash -->
-<script src="def.js?h=1c52f7a0f91a5d00"></script>
+<script src="/site-path/def.js?h=1c52f7a0f91a5d00"></script>
 <!-- end-hash -->
 </body>
 </html>
@@ -74,9 +86,11 @@ gulp.task('assets-hash', function () {
 
 ### Custom options
 
-```
-assetsDir: 'public'
-assetsGetter: function(filePath, filePathRex, assetsDir) {}
-hashLength: 16
-hashArgName: 'hash'
-```
+|    option    |   type   | default |                    example                    |
+|:------------:|:--------:|:-------:|:---------------------------------------------:|
+|   assetsDir  |  string  |  public |                       -                       |
+| assetsGetter | function |   null  | function(filePath, filePathRex, assetsDir) {} |
+|  hashLength  |  number  |    32   |                       -                       |
+| hashArgName  | string   | hash    | -                                             |
+| removeTags   | boolean  | false   | -                                             |
+| usePale      | boolean  | false   | -                                             |

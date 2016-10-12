@@ -6,42 +6,41 @@ var gutil = require('gulp-util');
 
 /**
  * @param {Object} [options]
- * @param {string} [options.assetsDir]
+ * @param {string} [options.assetsDir='public']
  * @param {Function} [options.assetsGetter] returned absolute path to file for get hash
  * @param {number} [options.hashLength=32]
  * @param {string} [options.hashArgName='hash']
  * @param {boolean} [options.removeTags=false]
+ * @param {boolean} [options.usePale=false]
  * @return {Object}
  */
 module.exports = function(options) {
   options = options || {};
+  options.assetsDir = options.assetsDir || 'public';
   options.hashLength = options.hashLength || 32;
   options.hashArgName = options.hashArgName || 'hash';
 
-  var startReg = /<!--\s*start\-hash\s*-->/gim;
-  var endReg = /<!--\s*end\-hash\s*-->/gim;
-  var jsAndCssReg = /<\s*script\s+.*?src\s*=\s*"([^"]+.js).*?".*?><\s*\/\s*script\s*>|<\s*link\s+.*?href\s*=\s*"([^"]+.css).*".*?>/gi;
-  var regSpecialsReg = /([.?*+^$[\]\\(){}|-])/g;
+  var paleReg = /<!--\s*start\-hash\s*-->([\s\S]*?)<!--\s*end\-hash\s*-->/gim;
+  var jsReg = /(<\s*script\s+.*?src\s*=\s*")([^"]+.js)(\?.*)?(.*?".*?><\s*\/\s*script\s*>)/gi;
+  var cssReg = /(<\s*link\s+.*?href\s*=\s*")([^"]+.css)(\?.*)?(.*".*?>)/gi;
 
-  function getTags(content) {
-    var tags = [];
+  function handle(entry, prefix, path, hashStr, suffix) {
 
-    content
-      .replace(/<!--(?:(?:.|\r|\n)*?)-->/gim, '')
-      .replace(jsAndCssReg, function (a, b, c) {
-        tags.push({
-          html: a,
-          path: b || c,
-          pathReg: new RegExp(escapeRegSpecials(b || c) + '.*?"', 'g')
-        });
-      });
+    var assetPath = options.assetsGetter
+      ? options.assetsGetter(path, options.assetsDir)
+      : path.join((options.assetsDir || ''), path);
 
-    return tags;
+    var assetContent = fs.readFileSync(assetPath, {encoding: 'utf8'});
+
+    var hash = require('crypto')
+      .createHash('md5')
+      .update(assetContent)
+      .digest("hex")
+      .substr(-options.hashLength);
+
+    return prefix + path + '?' + options.hashArgName + '=' + hash + suffix;
   }
 
-  function escapeRegSpecials(str) {
-    return (str + '').replace(regSpecialsReg, "\\$1");
-  }
 
   return through.obj(function(file, enc, callback) {
     if (file.isNull()) {
@@ -53,41 +52,30 @@ module.exports = function(options) {
       callback();
     }
     else {
+      var content = String(file.contents);
 
-      var html = [];
-      var sections = String(file.contents).split(endReg);
+      if (options.usePale) {
+        content = String(file.contents)
+            .replace(paleReg, function (a, b) {
+              var sections = options.removeTags ? b : a;
+              return sections
+                  .replace(jsReg, handle)
+                  .replace(cssReg, handle);
+            });
 
-      for (var i = 0, l = sections.length; i < l; ++i) {
-        if (sections[i].match(startReg)) {
-          var tag;
-          var section = sections[i].split(startReg);
-          var tags = getTags(section[1]);
-          html.push(section[0]);
-          if (!options.removeTags) {
-            html.push('<!-- start-hash -->\r\n');
-          }
-          for (var j = 0; j < tags.length; j++) {
-            tag = tags[j];
-            var filePath = options.assetsGetter
-                ? options.assetsGetter(tag.path, tag.pathReg, options.assetsDir)
-                : path.join((options.assetsDir ? options.assetsDir:''), tag.path);
-            var hash = require('crypto')
-              .createHash('md5')
-              .update(fs.readFileSync(filePath, {encoding: 'utf8'}))
-              .digest("hex")
-              .substr(-options.hashLength);
-            var assetPath = tag.path + '?' +  options.hashArgName + '=' + hash;
-            html.push(tag.html.replace(tag.pathReg, assetPath + '"') + '\r\n');
-          }
-          if (!options.removeTags) {
-            html.push('<!-- end-hash -->');
-          }
-        }
-        else { html.push(sections[i]); }
+        file.contents = new Buffer(content);
+        this.push(file);
+        return callback();
+      } else {
+        content = String(file.contents)
+            .replace(jsReg, handle)
+            .replace(cssReg, handle);
+        file.contents = new Buffer(content);
+        this.push(file);
+        return callback();
+
       }
-      file.contents = new Buffer(html.join(''));
-      this.push(file);
-      return callback();
+
     }
   });
 };
