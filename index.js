@@ -10,6 +10,7 @@ var gutil = require('gulp-util');
  * @param {Function} [options.assetsGetter] returned absolute path to file for get hash
  * @param {number} [options.hashLength=32]
  * @param {string} [options.hashArgName='hash']
+ * @param {boolean} [options.removeTags=false]
  * @return {Object}
  */
 module.exports = function(options) {
@@ -48,7 +49,7 @@ module.exports = function(options) {
       callback();
     }
     else if (file.isStream()) {
-      this.emit('error', new gutil.PluginError('gulp-usemin', 'Streams are not supported!')); //todo name
+      this.emit('error', new gutil.PluginError('gulp-asset-rev-hash', 'Streams are not supported!'));
       callback();
     }
     else {
@@ -62,7 +63,9 @@ module.exports = function(options) {
           var section = sections[i].split(startReg);
           var tags = getTags(section[1]);
           html.push(section[0]);
-          html.push('<!-- start-hash -->\r\n');
+          if (!options.removeTags) {
+            html.push('<!-- start-hash -->\r\n');
+          }
           for (var j = 0; j < tags.length; j++) {
             tag = tags[j];
             var filePath = options.assetsGetter
@@ -76,7 +79,9 @@ module.exports = function(options) {
             var assetPath = tag.path + '?' +  options.hashArgName + '=' + hash;
             html.push(tag.html.replace(tag.pathReg, assetPath + '"') + '\r\n');
           }
-          html.push('<!-- end-hash -->');
+          if (!options.removeTags) {
+            html.push('<!-- end-hash -->');
+          }
         }
         else { html.push(sections[i]); }
       }
