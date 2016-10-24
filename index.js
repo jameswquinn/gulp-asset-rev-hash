@@ -28,7 +28,7 @@ module.exports = function(options) {
 
   function handle(content, ext) {
     switch (ext) {
-      case 'css':
+      case '.css':
         return content
             .replace(urlReg, repl);
       default:
