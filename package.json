@@ -1,6 +1,6 @@
 {
   "name": "gulp-asset-rev-hash",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Appends a file's hash to a file URL to cache assets in any file (html, templates). Fork from gulp-rev-hash",
   "main": "index.js",
   "dependencies": {

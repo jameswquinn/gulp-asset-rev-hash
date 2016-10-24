@@ -1,5 +1,6 @@
 var path = require('path');
 var fs = require('fs');
+var crypto = require('crypto');
 
 var through = require('through2');
 var gutil = require('gulp-util');
@@ -21,22 +22,35 @@ module.exports = function(options) {
   options.hashArgName = options.hashArgName || 'hash';
 
   var paleReg = /<!--\s*start\-hash\s*-->([\s\S]*?)<!--\s*end\-hash\s*-->/gim;
-  var jsReg = /(<\s*script\s+.*?src\s*=\s*")([^"]+.js)(\?.*)?(.*?".*?><\s*\/\s*script\s*>)/gi;
-  var cssReg = /(<\s*link\s+.*?href\s*=\s*")([^"]+.css)(\?.*)?(.*".*?>)/gi;
+  var jsReg = /(<\s*script.*?\s+src\s*=\s*")([^"]+.js).*?(".*?><\s*?\/\s*?script\s*>)/gi;
+  var cssReg = /(<\s*?link.*?\s+href\s*?=\s*?")([^"]+.css).*?(".*?>)/gi;
+  var urlReg = /(:\s*?url\s*?\(['"]?)([^'"\)]+\.[a-z0-9]+).*?(['"]?\).*?;)/gi;
 
-  function handle(entry, prefix, path, hashStr, suffix) {
+  function handle(content, ext) {
+    switch (ext) {
+      case 'css':
+        return content
+            .replace(urlReg, repl);
+      default:
+        return content
+            .replace(jsReg, repl)
+            .replace(cssReg, repl);
+    }
+  }
+
+  function repl(entry, prefix, path, suffix) {
 
     var assetPath = options.assetsGetter
-      ? options.assetsGetter(path, options.assetsDir)
-      : path.join((options.assetsDir || ''), path);
+        ? options.assetsGetter(path, options.assetsDir)
+        : path.join((options.assetsDir || ''), path);
 
     var assetContent = fs.readFileSync(assetPath, {encoding: 'utf8'});
 
-    var hash = require('crypto')
-      .createHash('md5')
-      .update(assetContent)
-      .digest("hex")
-      .substr(-options.hashLength);
+    var hash = crypto
+        .createHash('md5')
+        .update(assetContent)
+        .digest("hex")
+        .substr(-options.hashLength);
 
     return prefix + path + '?' + options.hashArgName + '=' + hash + suffix;
   }
@@ -53,29 +67,19 @@ module.exports = function(options) {
     }
     else {
       var content = String(file.contents);
+      var ext = path.extname(file.path);
 
       if (options.usePale) {
-        content = String(file.contents)
-            .replace(paleReg, function (a, b) {
-              var sections = options.removeTags ? b : a;
-              return sections
-                  .replace(jsReg, handle)
-                  .replace(cssReg, handle);
-            });
-
-        file.contents = new Buffer(content);
-        this.push(file);
-        return callback();
+        content = contents.replace(paleReg, function (a, b) {
+          var sections = options.removeTags ? b : a;
+          return handle(sections, ext);
+        });
       } else {
-        content = String(file.contents)
-            .replace(jsReg, handle)
-            .replace(cssReg, handle);
-        file.contents = new Buffer(content);
-        this.push(file);
-        return callback();
-
+        content = handle(content, ext);
       }
-
+      file.contents = new Buffer(content);
+      this.push(file);
+      callback();
     }
   });
 };
