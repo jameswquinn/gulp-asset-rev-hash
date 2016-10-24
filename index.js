@@ -13,6 +13,7 @@ var gutil = require('gulp-util');
  * @param {string} [options.hashArgName='hash']
  * @param {boolean} [options.removeTags=false]
  * @param {boolean} [options.usePale=false]
+ * @param {boolean} [options.ignoreCache=false]
  * @return {Object}
  */
 module.exports = function(options) {
@@ -21,10 +22,15 @@ module.exports = function(options) {
   options.hashLength = options.hashLength || 32;
   options.hashArgName = options.hashArgName || 'hash';
 
+  var cache = {};
   var paleReg = /<!--\s*start\-hash\s*-->([\s\S]*?)<!--\s*end\-hash\s*-->/gim;
   var jsReg = /(<\s*script.*?\s+src\s*=\s*")([^"]+.js).*?(".*?><\s*?\/\s*?script\s*>)/gi;
   var cssReg = /(<\s*?link.*?\s+href\s*?=\s*?")([^"]+.css).*?(".*?>)/gi;
   var urlReg = /(:\s*?url\s*?\(['"]?)([^'"\)]+\.[a-z0-9]+).*?(['"]?\).*?;)/gi;
+
+  function resetCache() {
+    cache = {};
+  }
 
   function handle(content, ext) {
     switch (ext) {
@@ -44,13 +50,20 @@ module.exports = function(options) {
         ? options.assetsGetter(path, options.assetsDir)
         : path.join((options.assetsDir || ''), path);
 
-    var assetContent = fs.readFileSync(assetPath, {encoding: 'utf8'});
+    var hash;
 
-    var hash = crypto
-        .createHash('md5')
-        .update(assetContent)
-        .digest("hex")
-        .substr(-options.hashLength);
+    if (cache[assetPath] && !options.ignoreCache) {
+      hash = cache[assetPath]
+    } else {
+      var assetContent = fs.readFileSync(assetPath, {encoding: 'utf8'});
+      hash = crypto
+          .createHash('md5')
+          .update(assetContent)
+          .digest("hex")
+          .substr(-options.hashLength);
+
+      cache[assetPath] = hash;
+    }
 
     return prefix + path + '?' + options.hashArgName + '=' + hash + suffix;
   }
@@ -80,6 +93,8 @@ module.exports = function(options) {
       file.contents = new Buffer(content);
       this.push(file);
       callback();
+
+      resetCache();
     }
   });
 };
