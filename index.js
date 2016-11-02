@@ -46,6 +46,11 @@ module.exports = function(options) {
 
   function repl(entry, prefix, path, suffix) {
 
+    // skip data-url
+    if(path.indexOf('data:') === 0) {
+      return entry;
+    }
+
     var assetPath = options.assetsGetter
         ? options.assetsGetter(path, options.assetsDir)
         : path.join((options.assetsDir || ''), path);
