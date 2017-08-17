@@ -26,34 +26,40 @@ module.exports = function(options) {
   var paleReg = /<!--\s*start\-hash\s*-->([\s\S]*?)<!--\s*end\-hash\s*-->/gim;
   var jsReg = /(<\s*script.*?\s+src\s*=\s*")([^"]+.js).*?(".*?><\s*?\/\s*?script\s*>)/gi;
   var cssReg = /(<\s*?link.*?\s+href\s*?=\s*?")([^"]+.css).*?(".*?>)/gi;
-  var urlReg = /(:\s*?url\s*?\(['"]?)([^'"\)]+\.[a-z0-9]+).*?(['"]?\).*?;)/gi;
+  var urlReg = /(url\s*?\(['"]?)([^'"\)]+\.[a-z0-9]+).*?(['"]?\).*?;)/gi;
 
   function resetCache() {
     cache = {};
   }
 
-  function handle(content, ext) {
+  function handle(content, ext, dir) {
     switch (ext) {
       case '.css':
         return content
-            .replace(urlReg, repl);
+            .replace(urlReg, repl.bind(null, dir));
       default:
         return content
-            .replace(jsReg, repl)
-            .replace(cssReg, repl);
+            .replace(jsReg, repl.bind(null, dir))
+            .replace(cssReg, repl.bind(null, dir));
     }
   }
 
-  function repl(entry, prefix, path, suffix) {
+  function repl(dir, entry, prefix, p, suffix) {
 
     // skip data-url
-    if(path.indexOf('data:') === 0) {
+    if(p.indexOf('data:') === 0) {
       return entry;
     }
 
-    var assetPath = options.assetsGetter
-        ? options.assetsGetter(path, options.assetsDir)
-        : path.join((options.assetsDir || ''), path);
+    var assetPath;
+
+    if (options.assetsGetter) {
+      assetPath = options.assetsGetter(p, options.assetsDir)
+    } else {
+      assetPath = path.isAbsolute(p)
+        ? path.join((options.assetsDir || ''), p)
+        : path.join(dir, p);
+    }
 
     var hash;
 
@@ -70,11 +76,12 @@ module.exports = function(options) {
       cache[assetPath] = hash;
     }
 
-    return prefix + path + '?' + options.hashArgName + '=' + hash + suffix;
+    return prefix + p + '?' + options.hashArgName + '=' + hash + suffix;
   }
 
 
   return through.obj(function(file, enc, callback) {
+    var dir = path.dirname(file.path);
     if (file.isNull()) {
       this.push(file); // Do nothing if no contents
       callback();
@@ -90,10 +97,10 @@ module.exports = function(options) {
       if (options.usePale) {
         content = contents.replace(paleReg, function (a, b) {
           var sections = options.removeTags ? b : a;
-          return handle(sections, ext);
+          return handle(sections, ext, dir);
         });
       } else {
-        content = handle(content, ext);
+        content = handle(content, ext, dir);
       }
       file.contents = new Buffer(content);
       this.push(file);
