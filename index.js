@@ -26,7 +26,7 @@ module.exports = function(options) {
   var paleReg = /<!--\s*start\-hash\s*-->([\s\S]*?)<!--\s*end\-hash\s*-->/gim;
   var jsReg = /(<\s*script.*?\s+src\s*=\s*")([^"]+.js).*?(".*?><\s*?\/\s*?script\s*>)/gi;
   var cssReg = /(<\s*?link.*?\s+href\s*?=\s*?")([^"]+.css).*?(".*?>)/gi;
-  var urlReg = /(url\s*?\(['"]?)([^'"\)]+\.[a-z0-9]+).*?(['"]?\).*?;)/gi;
+  var urlReg = /(url\s*?\(['"]?)([^'"\)]+\.[a-z0-9]+).*?(['"]?\))/gi;
 
   function resetCache() {
     cache = {};
