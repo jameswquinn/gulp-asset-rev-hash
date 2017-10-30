@@ -51,6 +51,11 @@ module.exports = function(options) {
       return entry;
     }
 
+    // skip extarnal urls
+    if(p.indexOf('http') === 0) {
+      return entry;
+    }
+
     var assetPath;
 
     if (options.assetsGetter) {
