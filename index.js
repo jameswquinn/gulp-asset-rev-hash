@@ -100,7 +100,7 @@ module.exports = function(options) {
       var ext = path.extname(file.path);
 
       if (options.usePale) {
-        content = contents.replace(paleReg, function (a, b) {
+        content = content.replace(paleReg, function (a, b) {
           var sections = options.removeTags ? b : a;
           return handle(sections, ext, dir);
         });
