@@ -2,7 +2,7 @@ gulp-asset-rev-hasher
 =============
 
 > Keeps a file's hash in file's links to your assets. For automatic cache updating purpose.
-> Forked from https://github.com/vladlavrik/gulp-asset-rev-hash
+> Forked from https://github.com/outluch/gulp-rev-hash
 
 ## Install
 
